@@ -22,19 +22,21 @@ Stack: Python · FastMCP · Fly.io (lhr) · GitHub Actions CI/CD
 
 ## Next steps (in order)
 
-1. Oak creates Fly.io account and installs `flyctl`
-2. In this repo: `flyctl launch --no-deploy` (creates the app on Fly, writes app name into fly.toml)
-3. Set secrets: `flyctl secrets set TRELLO_API_KEY=... TRELLO_TOKEN=... MCP_AUTH_TOKEN=...`
-4. Add `FLY_API_TOKEN` to GitHub repo secrets (Settings → Secrets → Actions)
-5. Push any change to `main` → CI runs → deploys automatically
-6. Add to Claude MCP config (see README for snippet)
-7. Test each tool from Claude
+1. Copy `.env.example` → `.env` and fill in `TRELLO_API_KEY`, `TRELLO_TOKEN`, `MCP_AUTH_TOKEN`
+2. Oak creates Fly.io account and installs `flyctl`
+3. In this repo: `flyctl launch --no-deploy` (creates the app on Fly, writes app name into fly.toml)
+4. Push secrets to Fly: `bash set-fly-secrets.sh` (reads from `.env`, never exposes values in shell history)
+5. Add `FLY_API_TOKEN` to GitHub repo secrets (Settings → Secrets → Actions)
+6. Push any change to `main` → CI runs → deploys automatically
+7. Add to Claude MCP config (see README for snippet)
+8. Test each tool from Claude
 
 ## Project layout
 
 ```
 server.py                      # FastMCP server — all tools defined here
 fly.toml                       # Fly.io deploy config
+set-fly-secrets.sh             # Reads .env and pushes secrets to Fly
 requirements.txt               # Runtime deps
 requirements-dev.txt           # + lint/test deps
 tests/test_server.py           # Smoke tests

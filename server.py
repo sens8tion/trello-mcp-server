@@ -7,7 +7,10 @@ Auth: Bearer token checked on every request.
 
 import os
 import httpx
+from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
+
+load_dotenv()  # no-op in prod (Fly injects env vars directly)
 
 TRELLO_API_KEY = os.environ["TRELLO_API_KEY"]
 TRELLO_TOKEN = os.environ["TRELLO_TOKEN"]
