@@ -33,9 +33,6 @@ class BearerAuthMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-mcp.app.add_middleware(BearerAuthMiddleware)
-
-
 def _params(**kwargs) -> dict:
     """Base Trello auth params merged with any extras."""
     return {"key": TRELLO_API_KEY, "token": TRELLO_TOKEN, **kwargs}
@@ -141,6 +138,13 @@ async def health(_request):
     return JSONResponse({"status": "ok"})
 
 
+# Build the ASGI app after all tools/routes are registered.
+# mcp.sse_app() returns a plain Starlette instance; add our auth middleware to it.
+app = mcp.sse_app()
+app.add_middleware(BearerAuthMiddleware)
+
+
 if __name__ == "__main__":
+    import uvicorn
     port = int(os.environ.get("PORT", 8000))
-    mcp.run(transport="sse", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=port)
