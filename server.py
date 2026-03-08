@@ -9,6 +9,8 @@ import os
 import httpx
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 
 load_dotenv()  # no-op in prod (Fly injects env vars directly)
 
@@ -18,7 +20,20 @@ MCP_AUTH_TOKEN = os.environ["MCP_AUTH_TOKEN"]
 
 BASE_URL = "https://api.trello.com/1"
 
-mcp = FastMCP("trello-mcp-server", auth_token=MCP_AUTH_TOKEN)
+mcp = FastMCP("trello-mcp-server")
+
+
+class BearerAuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        if request.url.path == "/health":
+            return await call_next(request)
+        auth = request.headers.get("Authorization", "")
+        if auth != f"Bearer {MCP_AUTH_TOKEN}":
+            return Response("Unauthorized", status_code=401)
+        return await call_next(request)
+
+
+mcp.app.add_middleware(BearerAuthMiddleware)
 
 
 def _params(**kwargs) -> dict:
@@ -127,4 +142,5 @@ async def health(_request):
 
 
 if __name__ == "__main__":
-    mcp.run(transport="sse")
+    port = int(os.environ.get("PORT", 8000))
+    mcp.run(transport="sse", port=port)
