@@ -1,7 +1,5 @@
 """Smoke tests — verify the server module loads and all tools are registered."""
 
-import os
-import importlib
 import pytest
 
 

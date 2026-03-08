@@ -77,7 +77,7 @@ def list_boards() -> list[dict]:
 def list_lists(board_id: str) -> list[dict]:
     """Return all open lists on a board."""
     lists = _get(f"/boards/{board_id}/lists", filter="open")
-    return [{"id": l["id"], "name": l["name"]} for l in lists]
+    return [{"id": lst["id"], "name": lst["name"]} for lst in lists]
 
 
 @mcp.tool()
