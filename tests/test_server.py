@@ -12,6 +12,8 @@ EXPECTED_TOOLS = {
     "move_card",
     "update_card",
     "archive_card",
+    "add_board",
+    "add_list",
 }
 
 

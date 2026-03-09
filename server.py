@@ -137,6 +137,20 @@ def archive_card(card_id: str) -> dict:
     return {"id": card["id"], "name": card["name"], "archived": True}
 
 
+@mcp.tool()
+def add_board(name: str, default_lists: bool = False) -> dict:
+    """Create a new Trello board. default_lists=True adds To Do / Doing / Done lists."""
+    board = _post("/boards", name=name, defaultLists=str(default_lists).lower())
+    return {"id": board["id"], "name": board["name"], "url": board["shortUrl"]}
+
+
+@mcp.tool()
+def add_list(board_id: str, name: str) -> dict:
+    """Add a new list to a board."""
+    lst = _post("/lists", name=name, idBoard=board_id)
+    return {"id": lst["id"], "name": lst["name"]}
+
+
 @mcp.custom_route("/health", methods=["GET"])
 async def health(_request):
     from starlette.responses import JSONResponse
