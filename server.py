@@ -9,6 +9,7 @@ import os
 import httpx
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
@@ -20,7 +21,11 @@ MCP_AUTH_TOKEN = os.environ["MCP_AUTH_TOKEN"]
 
 BASE_URL = "https://api.trello.com/1"
 
-mcp = FastMCP("trello-mcp-server")
+# Disable DNS rebinding protection — we use Bearer token auth instead.
+mcp = FastMCP(
+    "trello-mcp-server",
+    transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
+)
 
 
 class BearerAuthMiddleware(BaseHTTPMiddleware):
