@@ -13,12 +13,12 @@ Stack: Python · FastMCP · Fly.io (lhr) · GitHub Actions CI/CD
 ## Status
 
 - [x] Repo scaffolded and pushed
-- [ ] Fly.io account created (Oak doing this)
-- [ ] `flyctl launch --no-deploy` run in this repo
-- [ ] Fly secrets set (TRELLO_API_KEY, TRELLO_TOKEN, MCP_AUTH_TOKEN)
-- [ ] FLY_API_TOKEN added as GitHub repo secret (for CD)
-- [ ] First deploy succeeded
-- [ ] Registered in Claude MCP config → tools verified working
+- [x] Fly.io account created
+- [x] `flyctl launch --no-deploy` run in this repo
+- [x] Fly secrets set (TRELLO_API_KEY, TRELLO_TOKEN, MCP_AUTH_TOKEN)
+- [x] FLY_API_TOKEN added as GitHub repo secret (for CD)
+- [x] First deploy succeeded
+- [x] Registered in Claude MCP config → tools verified working
 
 ## Next steps (in order)
 
