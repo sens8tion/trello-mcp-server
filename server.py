@@ -22,9 +22,11 @@ MCP_AUTH_TOKEN = os.environ["MCP_AUTH_TOKEN"]
 BASE_URL = "https://api.trello.com/1"
 
 # Disable DNS rebinding protection — we use Bearer token auth instead.
+# stateless_http=True: each HTTP request is independent, no sessions to lose on reconnect.
 mcp = FastMCP(
     "trello-mcp-server",
     transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
+    stateless_http=True,
 )
 
 
@@ -158,8 +160,8 @@ async def health(_request):
 
 
 # Build the ASGI app after all tools/routes are registered.
-# mcp.sse_app() returns a plain Starlette instance; add our auth middleware to it.
-app = mcp.sse_app()
+# streamable_http_app() uses stateless HTTP POST per call — no persistent connection to drop.
+app = mcp.streamable_http_app()
 app.add_middleware(BearerAuthMiddleware)
 
 
