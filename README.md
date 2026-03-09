@@ -21,6 +21,8 @@ Claude (Code/Cowork) → HTTPS → Fly.io MCP Server → Trello API
 | `move_card` | Move card to another list |
 | `update_card` | Update name / desc / due date |
 | `archive_card` | Archive a card (reversible) |
+| `add_board` | Create a new board |
+| `add_list` | Add a list to a board |
 
 ## Setup
 
@@ -81,3 +83,7 @@ pytest
 - **CI** runs on every push/PR: lint (`ruff`) + tests (`pytest`)
 - **Deploy** runs on merge to `main` (after CI passes): `flyctl deploy --remote-only`
 - Required GitHub secret: `FLY_API_TOKEN`
+
+## Future
+
+- **Ephemeral agent** — instead of a persistent VM, the server runs as an on-demand process (e.g. Fly.io Machine spun up per invocation and destroyed on completion). Accepts a natural-language task, runs a Claude agentic loop to orchestrate Trello operations, then exits. No idle cost, no persistent state.
