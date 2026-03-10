@@ -9,6 +9,17 @@ Replaces the manual snapshot → propose → apply workflow.
 Claude (Code/Cowork) → HTTPS → Fly.io MCP Server → Trello API
 ```
 
+## Disclaimer
+
+This software is provided **as-is**, without warranty of any kind. Use at your own risk.
+
+- **Your credentials, your responsibility** — you supply your own Trello API key/token and bearer token. Keep them secret; rotate them if compromised.
+- **Destructive actions are possible** — Claude can archive cards, create boards, and modify data. Review the tools you expose and restrict board access as appropriate before connecting an AI agent.
+- **No affiliation** — this project is not affiliated with, endorsed by, or supported by Trello or Atlassian.
+- **Self-hosted** — when you deploy to Fly.io you run your own instance. The author does not operate a shared instance and has no access to your data or credentials.
+
+See [LICENSE](LICENSE) for the full MIT license terms.
+
 ## Tools
 
 | Tool | Description |
