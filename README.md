@@ -90,6 +90,20 @@ ruff check .
 pytest
 ```
 
+## Logging
+
+Each tool emits a human-readable log entry via `ctx.info()` MCP context notifications — visible in the Claude Desktop log pane and any MCP-aware client.
+
+Log messages describe the action taken (fetch, create, move, update, archive, etc.), making it easy to trace agent behaviour during a session. No secrets are logged; API keys and tokens remain in environment variables.
+
+Example log output:
+
+```
+[list_cards] Fetching cards for list 63a1b2c3d4e5f6a7b8c9d0e1
+[move_card] Moving card abc123 → list 63a1b2c3d4e5f6a7b8c9d0e1
+[archive_card] Archiving card abc123
+```
+
 ## CI/CD
 
 - **CI** runs on every push/PR: lint (`ruff`) + tests (`pytest`)
