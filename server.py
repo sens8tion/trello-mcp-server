@@ -1,14 +1,15 @@
 """
 Trello MCP Server — exposes Trello operations as MCP tools.
 
-Runs over HTTP + SSE (remote MCP transport).
+Runs over streamable HTTP (stateless POST per call).
 Auth: Bearer token checked on every request.
+Logging: MCP protocol notifications/message emitted via Context.
 """
 
 import os
 import httpx
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
@@ -45,23 +46,26 @@ def _params(**kwargs) -> dict:
     return {"key": TRELLO_API_KEY, "token": TRELLO_TOKEN, **kwargs}
 
 
-def _get(path: str, **kwargs) -> dict | list:
+async def _get(path: str, **kwargs) -> dict | list:
     url = f"{BASE_URL}{path}"
-    r = httpx.get(url, params=_params(**kwargs), timeout=10)
+    async with httpx.AsyncClient() as client:
+        r = await client.get(url, params=_params(**kwargs), timeout=10)
     r.raise_for_status()
     return r.json()
 
 
-def _post(path: str, **kwargs) -> dict:
+async def _post(path: str, **kwargs) -> dict:
     url = f"{BASE_URL}{path}"
-    r = httpx.post(url, params=_params(**kwargs), timeout=10)
+    async with httpx.AsyncClient() as client:
+        r = await client.post(url, params=_params(**kwargs), timeout=10)
     r.raise_for_status()
     return r.json()
 
 
-def _put(path: str, **kwargs) -> dict:
+async def _put(path: str, **kwargs) -> dict:
     url = f"{BASE_URL}{path}"
-    r = httpx.put(url, params=_params(**kwargs), timeout=10)
+    async with httpx.AsyncClient() as client:
+        r = await client.put(url, params=_params(**kwargs), timeout=10)
     r.raise_for_status()
     return r.json()
 
@@ -71,53 +75,67 @@ def _put(path: str, **kwargs) -> dict:
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
-def list_boards() -> list[dict]:
+async def list_boards(ctx: Context) -> list[dict]:
     """Return all Trello boards accessible to this account."""
-    boards = _get("/members/me/boards", fields="name,shortUrl,closed")
-    return [{"id": b["id"], "name": b["name"], "url": b["shortUrl"]} for b in boards if not b["closed"]]
+    await ctx.info("Fetching boards from Trello")
+    boards = await _get("/members/me/boards", fields="name,shortUrl,closed")
+    result = [{"id": b["id"], "name": b["name"], "url": b["shortUrl"]} for b in boards if not b["closed"]]
+    await ctx.info(f"Found {len(result)} open boards")
+    return result
 
 
 @mcp.tool()
-def list_lists(board_id: str) -> list[dict]:
+async def list_lists(board_id: str, ctx: Context) -> list[dict]:
     """Return all open lists on a board."""
-    lists = _get(f"/boards/{board_id}/lists", filter="open")
-    return [{"id": lst["id"], "name": lst["name"]} for lst in lists]
+    await ctx.info(f"Fetching lists for board {board_id}")
+    lists = await _get(f"/boards/{board_id}/lists", filter="open")
+    result = [{"id": lst["id"], "name": lst["name"]} for lst in lists]
+    await ctx.info(f"Found {len(result)} lists")
+    return result
 
 
 @mcp.tool()
-def list_cards(list_id: str) -> list[dict]:
+async def list_cards(list_id: str, ctx: Context) -> list[dict]:
     """Return all open cards in a list."""
-    cards = _get(f"/lists/{list_id}/cards", fields="name,desc,due,shortUrl")
-    return [{"id": c["id"], "name": c["name"], "desc": c["desc"], "due": c["due"], "url": c["shortUrl"]} for c in cards]
+    await ctx.info(f"Fetching cards for list {list_id}")
+    cards = await _get(f"/lists/{list_id}/cards", fields="name,desc,due,shortUrl")
+    result = [{"id": c["id"], "name": c["name"], "desc": c["desc"], "due": c["due"], "url": c["shortUrl"]} for c in cards]
+    await ctx.info(f"Found {len(result)} cards")
+    return result
 
 
 @mcp.tool()
-def get_card(card_id: str) -> dict:
+async def get_card(card_id: str, ctx: Context) -> dict:
     """Get full detail for a single card."""
-    return _get(f"/cards/{card_id}")
+    await ctx.info(f"Fetching card {card_id}")
+    return await _get(f"/cards/{card_id}")
 
 
 @mcp.tool()
-def add_card(list_id: str, name: str, desc: str = "", due: str = "") -> dict:
+async def add_card(list_id: str, name: str, ctx: Context, desc: str = "", due: str = "") -> dict:
     """Add a new card to a list. due is optional ISO 8601 date string."""
+    await ctx.info(f"Creating card '{name}' in list {list_id}")
     kwargs = {"name": name, "idList": list_id}
     if desc:
         kwargs["desc"] = desc
     if due:
         kwargs["due"] = due
-    card = _post("/cards", **kwargs)
+    card = await _post("/cards", **kwargs)
+    await ctx.info(f"Created card {card['id']}")
     return {"id": card["id"], "name": card["name"], "url": card["shortUrl"]}
 
 
 @mcp.tool()
-def move_card(card_id: str, list_id: str) -> dict:
+async def move_card(card_id: str, list_id: str, ctx: Context) -> dict:
     """Move a card to a different list."""
-    card = _put(f"/cards/{card_id}", idList=list_id)
+    await ctx.info(f"Moving card {card_id} to list {list_id}")
+    card = await _put(f"/cards/{card_id}", idList=list_id)
+    await ctx.info(f"Moved card '{card['name']}'")
     return {"id": card["id"], "name": card["name"]}
 
 
 @mcp.tool()
-def update_card(card_id: str, name: str = "", desc: str = "", due: str = "") -> dict:
+async def update_card(card_id: str, ctx: Context, name: str = "", desc: str = "", due: str = "") -> dict:
     """Update a card's name, description, and/or due date. Pass only fields to change."""
     kwargs = {}
     if name:
@@ -128,28 +146,36 @@ def update_card(card_id: str, name: str = "", desc: str = "", due: str = "") -> 
         kwargs["due"] = due
     if not kwargs:
         return {"error": "No fields to update"}
-    card = _put(f"/cards/{card_id}", **kwargs)
+    await ctx.info(f"Updating card {card_id}: {list(kwargs.keys())}")
+    card = await _put(f"/cards/{card_id}", **kwargs)
+    await ctx.info(f"Updated card '{card['name']}'")
     return {"id": card["id"], "name": card["name"]}
 
 
 @mcp.tool()
-def archive_card(card_id: str) -> dict:
+async def archive_card(card_id: str, ctx: Context) -> dict:
     """Archive (close) a card. Reversible. Prefer this over delete."""
-    card = _put(f"/cards/{card_id}", closed=True)
+    await ctx.info(f"Archiving card {card_id}")
+    card = await _put(f"/cards/{card_id}", closed=True)
+    await ctx.info(f"Archived card '{card['name']}'")
     return {"id": card["id"], "name": card["name"], "archived": True}
 
 
 @mcp.tool()
-def add_board(name: str, default_lists: bool = False) -> dict:
+async def add_board(name: str, ctx: Context, default_lists: bool = False) -> dict:
     """Create a new Trello board. default_lists=True adds To Do / Doing / Done lists."""
-    board = _post("/boards", name=name, defaultLists=str(default_lists).lower())
+    await ctx.info(f"Creating board '{name}'")
+    board = await _post("/boards", name=name, defaultLists=str(default_lists).lower())
+    await ctx.info(f"Created board {board['id']}")
     return {"id": board["id"], "name": board["name"], "url": board["shortUrl"]}
 
 
 @mcp.tool()
-def add_list(board_id: str, name: str) -> dict:
+async def add_list(board_id: str, name: str, ctx: Context) -> dict:
     """Add a new list to a board."""
-    lst = _post("/lists", name=name, idBoard=board_id)
+    await ctx.info(f"Creating list '{name}' on board {board_id}")
+    lst = await _post("/lists", name=name, idBoard=board_id)
+    await ctx.info(f"Created list {lst['id']}")
     return {"id": lst["id"], "name": lst["name"]}
 
 
