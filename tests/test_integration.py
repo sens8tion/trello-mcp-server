@@ -24,7 +24,11 @@ AUTH_TOKEN = os.environ.get("MCP_AUTH_TOKEN", "")
 HAS_TRELLO = bool(os.environ.get("TRELLO_API_KEY"))
 
 MCP_URL = f"{SERVER_URL}/mcp"
-HEADERS = {"Authorization": f"Bearer {AUTH_TOKEN}", "Content-Type": "application/json"}
+HEADERS = {
+    "Authorization": f"Bearer {AUTH_TOKEN}",
+    "Content-Type": "application/json",
+    "Accept": "application/json, text/event-stream",
+}
 
 EXPECTED_TOOLS = {
     "list_boards", "list_lists", "list_cards", "get_card",
