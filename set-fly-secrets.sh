@@ -47,3 +47,12 @@ flyctl secrets set \
   "MCP_AUTH_TOKEN=${SECRETS[MCP_AUTH_TOKEN]}"
 
 echo "Done. Secrets set on Fly.io."
+
+# Push MCP_AUTH_TOKEN to GitHub Actions secrets so the integration tests can run.
+if command -v gh &>/dev/null; then
+  echo "Pushing MCP_AUTH_TOKEN to GitHub Actions secrets..."
+  gh secret set MCP_AUTH_TOKEN --body "${SECRETS[MCP_AUTH_TOKEN]}"
+  echo "Done. GitHub secret set."
+else
+  echo "SKIP: gh CLI not found — add MCP_AUTH_TOKEN to GitHub repo secrets manually."
+fi
