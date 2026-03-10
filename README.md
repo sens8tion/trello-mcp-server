@@ -52,7 +52,14 @@ flyctl deploy
 
 ### 3. Register in Claude MCP config
 
-Add to your Claude MCP settings (e.g. `~/.claude/mcp_servers.json`):
+Run the helper to auto-detect your Claude Desktop config path and write the entry:
+
+```bash
+python register-mcp.py
+# then restart Claude Desktop
+```
+
+Or add manually to your Claude MCP settings (e.g. `~/.claude/mcp_servers.json`):
 
 ```json
 {
