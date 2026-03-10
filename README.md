@@ -56,11 +56,16 @@ Add to your Claude MCP settings (e.g. `~/.claude/mcp_servers.json`):
 
 ```json
 {
-  "trello": {
-    "url": "https://trello-mcp-server.fly.dev/sse",
-    "transport": "sse",
-    "headers": {
-      "Authorization": "Bearer your_secret_bearer_token"
+  "mcpServers": {
+    "trello": {
+      "command": "mcp-remote",
+      "args": [
+        "https://trello-mcp-server.fly.dev/mcp",
+        "--transport",
+        "http-only",
+        "--header",
+        "Authorization:Bearer your_secret_bearer_token"
+      ]
     }
   }
 }
